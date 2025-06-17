@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Trash2, Activity, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Shield, Trash2, Activity, AlertTriangle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { api } from '../services/api';
 
 export const AdminPanel: React.FC = () => {
@@ -52,6 +52,27 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy':
+        return 'emerald';
+      case 'degraded':
+        return 'yellow';
+      case 'unhealthy':
+        return 'red';
+      default:
+        return 'gray';
+    }
+  };
+
+  const getStatusIcon = (isOk: boolean) => {
+    return isOk ? CheckCircle : XCircle;
+  };
+
+  const getStatusText = (isOk: boolean) => {
+    return isOk ? 'Operational' : 'Failed';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -83,31 +104,123 @@ export const AdminPanel: React.FC = () => {
         </div>
 
         {healthStatus ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+          <div className="space-y-4">
+            {/* Overall Status */}
+            <div className={`p-4 rounded-lg border ${
+              healthStatus.status === 'ok' 
+                ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800'
+                : healthStatus.status === 'degraded'
+                ? 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800'
+                : 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+            }`}>
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
+                <div className={`w-3 h-3 rounded-full mr-3 ${
+                  healthStatus.status === 'ok' 
+                    ? 'bg-emerald-500'
+                    : healthStatus.status === 'degraded'
+                    ? 'bg-yellow-500'
+                    : 'bg-red-500'
+                }`}></div>
                 <div>
-                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Database</p>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400">Connected</p>
+                  <p className={`text-sm font-medium ${
+                    healthStatus.status === 'ok' 
+                      ? 'text-emerald-800 dark:text-emerald-200'
+                      : healthStatus.status === 'degraded'
+                      ? 'text-yellow-800 dark:text-yellow-200'
+                      : 'text-red-800 dark:text-red-200'
+                  }`}>
+                    System Status: {healthStatus.status.charAt(0).toUpperCase() + healthStatus.status.slice(1)}
+                  </p>
                 </div>
               </div>
             </div>
-            <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
-                <div>
-                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Vector Store</p>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400">Operational</p>
+
+            {/* Individual Components */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Database */}
+              <div className={`p-4 rounded-lg border ${
+                healthStatus.db?.ok 
+                  ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800'
+                  : 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+              }`}>
+                <div className="flex items-center">
+                  {React.createElement(getStatusIcon(healthStatus.db?.ok), {
+                    className: `h-5 w-5 mr-3 ${healthStatus.db?.ok ? 'text-emerald-500' : 'text-red-500'}`
+                  })}
+                  <div>
+                    <p className={`text-sm font-medium ${
+                      healthStatus.db?.ok 
+                        ? 'text-emerald-800 dark:text-emerald-200'
+                        : 'text-red-800 dark:text-red-200'
+                    }`}>
+                      Database
+                    </p>
+                    <p className={`text-xs ${
+                      healthStatus.db?.ok 
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {healthStatus.db?.msg || getStatusText(healthStatus.db?.ok)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
-                <div>
-                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">LLM</p>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400">Available</p>
+
+              {/* Vector Store */}
+              <div className={`p-4 rounded-lg border ${
+                healthStatus.vectorstore?.ok 
+                  ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800'
+                  : 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+              }`}>
+                <div className="flex items-center">
+                  {React.createElement(getStatusIcon(healthStatus.vectorstore?.ok), {
+                    className: `h-5 w-5 mr-3 ${healthStatus.vectorstore?.ok ? 'text-emerald-500' : 'text-red-500'}`
+                  })}
+                  <div>
+                    <p className={`text-sm font-medium ${
+                      healthStatus.vectorstore?.ok 
+                        ? 'text-emerald-800 dark:text-emerald-200'
+                        : 'text-red-800 dark:text-red-200'
+                    }`}>
+                      Vector Store
+                    </p>
+                    <p className={`text-xs ${
+                      healthStatus.vectorstore?.ok 
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {healthStatus.vectorstore?.msg || getStatusText(healthStatus.vectorstore?.ok)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* LLM */}
+              <div className={`p-4 rounded-lg border ${
+                healthStatus.llm?.ok 
+                  ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800'
+                  : 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+              }`}>
+                <div className="flex items-center">
+                  {React.createElement(getStatusIcon(healthStatus.llm?.ok), {
+                    className: `h-5 w-5 mr-3 ${healthStatus.llm?.ok ? 'text-emerald-500' : 'text-red-500'}`
+                  })}
+                  <div>
+                    <p className={`text-sm font-medium ${
+                      healthStatus.llm?.ok 
+                        ? 'text-emerald-800 dark:text-emerald-200'
+                        : 'text-red-800 dark:text-red-200'
+                    }`}>
+                      LLM {healthStatus.llm?.model ? `(${healthStatus.llm.model})` : ''}
+                    </p>
+                    <p className={`text-xs ${
+                      healthStatus.llm?.ok 
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {healthStatus.llm?.msg || getStatusText(healthStatus.llm?.ok)}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -125,6 +238,11 @@ export const AdminPanel: React.FC = () => {
         ) : (
           <div className="animate-pulse space-y-3">
             <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            </div>
           </div>
         )}
       </div>
